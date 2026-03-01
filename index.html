@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OmniReader | Universal Document Reader</title>
+    <meta name="description" content="A premium universal document reader with multi-language support, summarization, and interactive Q&A modes.">
+    <!-- Google Fonts: Inter & Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Ionicons for elegant icons -->
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+    <!-- GSAP for smooth animations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <!-- PDF.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <!-- Marked for Markdown -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="nebula-bg"></div>
+    
+    <main class="app-container glass">
+        <!-- Sidebar -->
+        <aside class="sidebar glass-nav">
+            <div class="logo-area">
+                <div class="logo-glow"></div>
+                <h1>OmniReader</h1>
+            </div>
+            
+            <nav class="doc-list-container">
+                <p class="section-label">DOCUMENTS</p>
+                <div id="docList" class="doc-list">
+                    <!-- Dynamic Document Items -->
+                    <div class="doc-item active" data-id="welcome">
+                        <ion-icon name="document-text-outline"></ion-icon>
+                        <span>Welcome_Guide.md</span>
+                    </div>
+                </div>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <button id="uploadBtn" class="btn-action">
+                    <ion-icon name="add-outline"></ion-icon>
+                    Upload New
+                </button>
+                <button class="btn-icon">
+                    <ion-icon name="settings-outline"></ion-icon>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <section class="main-content">
+            <!-- Header / Toolbar -->
+            <header class="toolbar glass-nav">
+                <div class="reading-modes">
+                    <span class="toolbar-label">Reading Mode</span>
+                    <div class="mode-switch">
+                        <button class="mode-btn active" data-mode="detailed">
+                            <ion-icon name="reader-outline"></ion-icon>
+                            Detailed
+                        </button>
+                        <button class="mode-btn" data-mode="summary">
+                            <ion-icon name="list-outline"></ion-icon>
+                            Summary
+                        </button>
+                        <button class="mode-btn" data-mode="qa">
+                            <ion-icon name="chatbubbles-outline"></ion-icon>
+                            Q&A
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="translation-area">
+                    <div id="langSelector" class="lang-selector">
+                        <ion-icon name="language-outline"></ion-icon>
+                        <span id="currentLang">English</span>
+                        <ion-icon name="chevron-down-outline" class="chevron"></ion-icon>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Reader Canvas -->
+            <div class="reader-viewport glass">
+                <div id="documentHeader" class="doc-header">
+                    <h2 id="docTitle">Welcome_Guide.md</h2>
+                    <div class="doc-meta">
+                        <span id="pageCounter">1 / 1</span>
+                        <div class="zoom-controls">
+                            <button class="btn-sm"><ion-icon name="remove-outline"></ion-icon></button>
+                            <span>100%</span>
+                            <button class="btn-sm"><ion-icon name="add-outline"></ion-icon></button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="readerContent" class="reader-body">
+                    <!-- Document Content Injected Here -->
+                    <article class="prose">
+                        <h1>Welcome to OmniReader</h1>
+                        <p>Experience documents in a whole new dimension. OmniReader is your futuristic hub for comprehensive reading and instantaneous translation.</p>
+                        <h3>Key Capabilities:</h3>
+                        <ul>
+                            <li><strong>Multi-Format:</strong> PDF, Markdown, and Text.</li>
+                            <li><strong>Modes:</strong> Switch between full detail, smart summaries, or an interactive Q&A.</li>
+                            <li><strong>Translate:</strong> Break language barriers with 100+ languages.</li>
+                        </ul>
+                        <p>Upload a file using the sidebar to begin your journey.</p>
+                    </article>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Upload Modal -->
+    <div id="uploadModal" class="modal-overlay hidden">
+        <div class="modal-content glass">
+            <div class="modal-header">
+                <h3>Upload Document</h3>
+                <button id="closeModal" class="btn-close"><ion-icon name="close-outline"></ion-icon></button>
+            </div>
+            <div id="dropZone" class="drop-zone">
+                <ion-icon name="cloud-upload-outline"></ion-icon>
+                <p>Drag & Drop your files here</p>
+                <span>or click to browse</span>
+                <input type="file" id="fileInput" hidden accept=".pdf,.md,.txt">
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
