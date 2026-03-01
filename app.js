@@ -3,6 +3,8 @@ const state = {
     currentDoc: 'welcome',
     mode: 'detailed',
     language: 'English',
+    isSpeaking: false,
+    originalContent: null,
     documents: [
         { id: 'welcome', name: 'Welcome_Guide.md', type: 'markdown', content: '' }
     ],
@@ -22,6 +24,53 @@ const modeBtns = document.querySelectorAll('.mode-btn');
 const readerContent = document.getElementById('readerContent');
 const docTitle = document.getElementById('docTitle');
 const pageCounter = document.getElementById('pageCounter');
+const voiceBtn = document.getElementById('voiceBtn');
+
+// Speech Synthesis
+const synth = window.speechSynthesis;
+let utterance = null;
+
+function toggleVoice() {
+    if (state.isSpeaking) {
+        synth.cancel();
+        state.isSpeaking = false;
+        voiceBtn.classList.remove('active');
+        voiceBtn.querySelector('ion-icon').setAttribute('name', 'volume-medium-outline');
+    } else {
+        const textToRead = readerContent.innerText;
+        if (!textToRead) return;
+
+        utterance = new SpeechSynthesisUtterance(textToRead);
+
+        // Map language to voice if possible
+        const voiceMap = {
+            'Spanish': 'es-ES',
+            'French': 'fr-FR',
+            'Japanese': 'ja-JP',
+            'German': 'de-DE',
+            'Chinese': 'zh-CN',
+            'English': 'en-US'
+        };
+
+        const voices = synth.getVoices();
+        const langCode = voiceMap[state.language] || 'en-US';
+        const selectedVoice = voices.find(v => v.lang.includes(langCode));
+        if (selectedVoice) utterance.voice = selectedVoice;
+
+        utterance.onend = () => {
+            state.isSpeaking = false;
+            voiceBtn.classList.remove('active');
+            voiceBtn.querySelector('ion-icon').setAttribute('name', 'volume-medium-outline');
+        };
+
+        synth.speak(utterance);
+        state.isSpeaking = true;
+        voiceBtn.classList.add('active');
+        voiceBtn.querySelector('ion-icon').setAttribute('name', 'volume-mute-outline');
+    }
+}
+
+voiceBtn.addEventListener('click', toggleVoice);
 
 // Configure PDF.js
 const pdfjsLib = window['pdfjs-dist/build/pdf'];
@@ -68,6 +117,11 @@ async function selectDocument(id) {
     state.currentDoc = id;
     const doc = state.documents.find(d => d.id === id);
     docTitle.textContent = doc.name;
+    // Reset translation when switching doc
+    state.language = 'English';
+    document.getElementById('currentLang').textContent = 'English';
+    state.originalContent = null;
+
     updateDocList();
 
     // Animate doc selection
@@ -240,6 +294,56 @@ function handleFiles(files) {
     }
 }
 
+function simulateTranslation(text, targetLang) {
+    // Simple mock translation prefixes
+    const prefixes = {
+        'Spanish': '[ES] ',
+        'French': '[FR] ',
+        'Japanese': '[JP] ',
+        'German': '[DE] ',
+        'Chinese': '[ZH] '
+    };
+    if (targetLang === 'English') return text;
+    return (prefixes[targetLang] || '') + text.split(' ').map(w => w + (w.length > 3 ? 'o' : '')).join(' ');
+}
+
+// Lang Selector Simulation
+document.getElementById('langSelector').addEventListener('click', () => {
+    const langs = ['English', 'Spanish', 'French', 'Japanese', 'German', 'Chinese'];
+    const currentIdx = langs.indexOf(state.language);
+    const nextLang = langs[(currentIdx + 1) % langs.length];
+
+    state.language = nextLang;
+    document.getElementById('currentLang').textContent = state.language;
+
+    // Stop speaking if active
+    if (state.isSpeaking) toggleVoice();
+
+    // Actual Translation Simulation
+    if (!state.originalContent) {
+        state.originalContent = readerContent.innerHTML;
+    }
+
+    if (nextLang === 'English') {
+        readerContent.innerHTML = state.originalContent;
+        state.originalContent = null;
+    } else {
+        // Simple visual feedback for translation
+        simulateLoading();
+        setTimeout(() => {
+            const textNodes = [];
+            const walk = document.createTreeWalker(readerContent, NodeFilter.SHOW_TEXT, null, false);
+            let node;
+            while (node = walk.nextNode()) {
+                if (node.textContent.trim()) textNodes.push(node);
+            }
+            textNodes.forEach(node => {
+                node.textContent = simulateTranslation(node.textContent, nextLang);
+            });
+        }, 400);
+    }
+});
+
 const welcomeContent = `
 # Welcome to OmniReader
 
@@ -250,18 +354,10 @@ Experience documents in a whole new dimension. OmniReader is your futuristic hub
 - **Multi-Format:** PDF, Markdown, and Text.
 - **Modes:** Switch between full detail, smart summaries, or an interactive Q&A.
 - **Translate:** Break language barriers with 100+ languages.
+- **Voice Over:** Listen to your documents with our integrated speech engine.
 
 Upload a file using the sidebar to begin your journey.
 `;
-
-// Lang Selector Simulation
-document.getElementById('langSelector').addEventListener('click', () => {
-    const langs = ['English', 'Spanish', 'French', 'Japanese', 'German', 'Chinese'];
-    const currentIdx = langs.indexOf(state.language);
-    state.language = langs[(currentIdx + 1) % langs.length];
-    document.getElementById('currentLang').textContent = state.language;
-    simulateLoading();
-});
 
 // Initialization
 document.addEventListener('DOMContentLoaded', () => {

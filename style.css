@@ -281,6 +281,18 @@ body {
     color: var(--text-secondary);
 }
 
+.translation-area {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+#voiceBtn.active {
+    background: var(--gradient-primary);
+    color: #fff;
+    box-shadow: 0 0 15px var(--accent-glow);
+}
+
 /* Reader Viewport */
 .reader-viewport {
     flex: 1;
