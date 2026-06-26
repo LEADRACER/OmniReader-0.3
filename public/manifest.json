@@ -1,0 +1,17 @@
+{
+  "name": "OmniReader",
+  "short_name": "OmniReader",
+  "description": "Premium universal document reader — PDF, Markdown, TXT with AI summaries, Q&A, and translation",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#05050a",
+  "theme_color": "#6e45e2",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ],
+  "categories": ["productivity", "utilities"]
+}
