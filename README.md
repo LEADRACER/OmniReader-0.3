@@ -2,144 +2,218 @@
 
 A premium, universal document reader with AI-powered summaries, interactive Q&A, real-time translation, and voice playback — all running 100% client-side.
 
-**Download & Play** — no server, no backend required. Unzip `dist/`, open `index.html`, done.
+**Native app + Web app + PWA** — one codebase, runs everywhere.
+
+---
+
+## ⚡ Quick Start
+
+### Native App (Recommended)
+```bash
+# Download the binary for your platform from Releases
+# Linux/macOS:
+chmod +x omnireader && ./omnireader
+
+# Windows:
+omnireader.exe
+```
+
+Opens your browser automatically at `http://localhost:<random-port>`. Zero config, zero setup.
+
+### Web / PWA
+```bash
+# Unzip dist/ and open index.html
+# Or serve it:
+npx serve dist
+```
+Installable as PWA — works offline.
+
+---
 
 ## ✨ Features
 
 ### 📄 Multi-Format Reader
-- **PDF** — multi-page rendering via pdfjs-dist with error recovery
+- **PDF** — multi-page rendering via pdfjs-dist with error recovery, WebGPU acceleration
 - **Markdown** — full GFM support via marked
 - **Plain Text** — clean monospace rendering
 
 ### 🧠 AI-Powered Reading (OpenRouter)
 - **Summary Mode** — one-click LLM summarization
 - **Q&A Mode** — interactive chat with your document as context, conversation history persisted
-- **6 Models** — 🦉 Owl Alpha (default), GPT-4o, GPT-4o Mini, Claude 3.5 Haiku/Sonnet, Gemini 2.0 Flash, Llama 3.3 70B
-- **Bring Your Own Key** — [get a free OpenRouter key](https://openrouter.ai/keys), paste it once, done
+- **6+ Providers** — OpenRouter (default: 🦉 Owl Alpha), OpenAI, Groq (free Llama 3.3 70B!), DeepSeek, Together AI, GitHub Models (free GPT-4o-mini!), Ollama (local)
+- **Bring Your Own Key** — stored locally, sent only to your chosen provider
 
 ### 🌍 Translation
+- **Online** — Chrome Translation API (zero-setup), OpenRouter, Ollama
+- **Offline** — Transformers.js NLLB-200-distilled-600M (~1.2GB, fully local, no API key)
 - **6 Languages** — English, Spanish, French, Japanese, German, Chinese
-- **One-click** — select language, document translates instantly
-- **Original/Translated toggle** — switch back and forth without re-fetching
-- **Cached** — translations persist per (doc, language) in localStorage
+- **Original/Translated toggle** — switch instantly without re-fetching
 
 ### 🔊 Voice (TTS)
-- **Read Aloud** — browser-native speech synthesis, language-aware voice selection
-- **Controls** — pause/resume, stop, speed selector (0.5x–2.0x)
-- **Keyboard** — `Space` to pause/play, `s` to stop
+- Browser-native speech synthesis, language-aware voice selection
+- Controls: pause/resume, stop, speed selector (0.5x–2.0x)
+- Keyboard: `Space` to pause/play, `s` to stop
+
+### 📝 Annotations & Highlights
+- Select text → floating menu with 6 highlight colors + 📝 note button
+- Persisted per-document in localStorage, restored on reopen
+
+### 📚 Reading History & Bookmarks
+- Auto-saves scroll position, page, time spent
+- Sessions tracked with duration, auto-resume on reopen
+- Page/position bookmarks with labels
 
 ### 🔍 Search
-- **Find in Document** — `⌘F` or `/` to search
-- **Match navigation** — prev/next with yellow highlights, match counter
-- **Keyboard** — `Enter`/`Shift+Enter` or `n`/`p` to navigate matches
+- **In-document** — `⌘F` / `/` floating search bar, match highlights, prev/next nav
+- **Global** — full-text search across all uploaded documents
 
-### 📥 Export
-- **Download** current view as `.md` or `.txt`
-- Respects current mode — export summaries, translations, or Q&A conversations
-- `⌘E` shortcut
+### 📄 PDF Power Tools
+- **Outline/TOC** — extracted bookmarks rendered as sidebar tree, click to jump
+- **Split View** — Original ↔ Translated side-by-side with synced scrolling
+- **WebGPU** — accelerated PDF rendering (auto-detected)
 
 ### 🎨 Themes
 - **Dark** — deep glassmorphism with purple-cyan nebula
 - **Libral Light** — lavender-white with frosted glass and purple accents
 - Toggle with ☀️/🌙 button, persisted in localStorage
 
-### ⚡ PWA
-- Installable as standalone app
-- Service worker caches assets for offline use
-- Skip OpenRouter API calls from caching (always fresh)
+---
 
 ## ⌨️ Keyboard Shortcuts
 
 | Key | Action |
 |-----|--------|
-| `⌘F` / `/` | Search in document |
+| `⌘F` / `Ctrl+F` / `/` | Search in document |
 | `⌘E` | Export current view |
 | `Space` | Pause / resume TTS |
 | `s` | Stop TTS |
-| `Escape` | Stop TTS or close search |
+| `Escape` | Stop TTS or close search/modals |
 | `Enter` / `Shift+Enter` | Next / prev search match |
 | `n` / `p` | Next / prev match (search active) |
 
-## 🚀 Quick Start
+---
 
+## 🚀 Installation
+
+### Native Binary (Best Experience)
+
+| Platform | Download | Install |
+|----------|----------|---------|
+| Linux x86_64 | `omnireader-2.0.0-linux-amd64.tar.gz` | `tar -xzf ... && ./omnireader` |
+| Linux ARM64 | `omnireader-2.0.0-linux-arm64.tar.gz` | `tar -xzf ... && ./omnireader` |
+| macOS Intel | `omnireader-2.0.0-darwin-amd64.tar.gz` | `tar -xzf ... && ./omnireader` |
+| macOS Apple Silicon | `omnireader-2.0.0-darwin-arm64.tar.gz` | `tar -xzf ... && ./omnireader` |
+| Windows x86_64 | `omnireader-2.0.0-windows-amd64.zip` | Unzip → `omnireader.exe` |
+| Windows ARM64 | `omnireader-2.0.0-windows-arm64.zip` | Unzip → `omnireader.exe` |
+
+**Run:**
 ```bash
-# Clone
-git clone https://github.com/LEADRACER/OmniReader-0.3.git
-cd OmniReader-0.3
-
-# Install & build
-npm install
-npm run build
-
-# Open
-open dist/index.html
+./omnireader              # Auto-opens browser on random port
+./omnireader -port 8080   # Specific port
+./omnireader -headless -port 0  # Headless server (CI)
 ```
 
-### Development
-
+### Web / PWA
 ```bash
-npm run dev    # Start Vite dev server
-npm run build  # Production build → dist/
+# Download dist.zip from Releases, unzip → open index.html
+# Or serve:
+npx serve dist
 ```
+Works offline via Service Worker. Installable as standalone app.
+
+---
+
+## 🤝 Bring Your Own Key
+
+OmniReader uses **OpenRouter** by default (🦉 Owl Alpha). Get a free key at [openrouter.ai/keys](https://openrouter.ai/keys) ($1 free credit).
+
+1. Open OmniReader → click ⚙️/🔑 in sidebar
+2. Paste your API key
+3. All AI features unlock instantly
+
+**Alternative providers (no OpenRouter key needed):**
+- **Groq** — Free Llama 3.3 70B at [console.groq.com](https://console.groq.com/keys)
+- **GitHub Models** — Free GPT-4o-mini with GitHub PAT at [github.com/settings/tokens](https://github.com/settings/tokens)
+- **Ollama** — Local, no key: `brew install ollama && ollama pull llama3.2:3b`
+
+Your key is stored in `localStorage` and only sent to your chosen provider.
+
+---
 
 ## 🏗️ Architecture
 
 ```
-src/
-├── main.js                 # Entry point + SW registration
-├── app.js                  # App initialization
-├── store.js                # State management (pub/sub + localStorage)
-├── style.css               # Full design system (dark + light themes)
-├── utils.js                # Helpers
-├── components/
-│   ├── sidebar.js          # Document library + settings + theme toggle
-│   ├── toolbar.js          # Mode switcher, language, voice controls, export
-│   ├── reader.js           # Reader viewport (doc rendering + AI modes)
-│   ├── search.js           # ⌘F search overlay with highlights
-│   └── upload-modal.js     # Drag & drop upload modal
-├── readers/
-│   ├── markdown.js         # Markdown → HTML (marked)
-│   ├── text.js             # Plain text → HTML
-│   └── pdf.js              # PDF → Canvas (pdfjs-dist, error recovery)
-└── services/
-    ├── ai.js               # OpenRouter API (summary, Q&A, translation)
-    ├── voice.js             # Web Speech API (speak, pause, resume, speed)
-    └── keyboard.js          # Global keyboard shortcuts
+omnireader (single binary, ~11MB)
+├── Embedded web assets (dist/)
+│   ├── index-*.js (534KB) — main app
+│   ├── translation-offline-*.js (807KB, lazy) — NLLB model
+│   ├── mobile-gestures-*.js (3.7KB, lazy) — touch gestures
+│   ├── index-*.css (18KB) — design system
+│   └── pdf.worker.min-*.mjs (1.2MB) — PDF.js worker
+├── HTTP server (auto port, opens browser)
+├── API endpoints (/api/open, /api/save, /api/config)
+└── Cross-platform: Linux/macOS/Windows, amd64/arm64
 ```
 
-| Layer | Technology |
-|-------|-----------|
-| Build | Vite 8 (vanilla JS) |
-| PDF | pdfjs-dist |
-| Markdown | marked |
-| AI | OpenRouter API (Owl Alpha default) |
-| State | Custom pub/sub + localStorage |
-| TTS | Web Speech API |
-| Design | CSS custom properties, glassmorphism |
-| PWA | Service Worker + Web Manifest |
-
-## 🔑 API Key
-
-OmniReader uses **OpenRouter** for all AI features. You bring your own key:
-
-1. Get a free key at [openrouter.ai/keys](https://openrouter.ai/keys) ($1 free credit)
-2. Open OmniReader → click ⚙️ in sidebar → paste your key
-3. All AI features unlock instantly
-
-Your key is stored in `localStorage` and only sent to `openrouter.ai`. It never leaves your browser.
-
-## 📋 Build Phases
-
-| Phase | Status |
-|-------|--------|
-| 1 — Foundation (scaffold, upload, readers, glassmorphism) | ✅ |
-| 2 — AI Reading (Summary, Q&A, OpenRouter) | ✅ |
-| 3 — Translation (6 languages, caching, toggle) | ✅ |
-| 4 — Voice & Search (TTS controls, ⌘F, shortcuts) | ✅ |
-| 5 — Polish (light theme, export, error boundaries, PWA) | ✅ |
-
-See [PLAN.md](PLAN.md) for detailed phase breakdown.
+**Dynamic imports** keep main bundle lean — offline translation & mobile gestures load only when needed.
 
 ---
 
-Built with ❤️ by [LEADRACER](https://github.com/LEADRACER)
+## 🛠️ Development
+
+```bash
+# Install deps
+npm install
+
+# Dev server (hot reload)
+npm run dev
+
+# Build web assets
+npm run build
+
+# Native runner
+cd cmd/omnireader && go build -o omnireader .
+
+# Cross-platform build
+./build-native.sh
+```
+
+### Project Structure
+```
+├── cmd/omnireader/          # Go native runner
+│   ├── main.go              # HTTP server + embed
+│   ├── web/dist/            # Embedded web assets
+│   └── go.mod
+├── src/                     # Web app (vanilla JS + Vite)
+│   ├── components/          # UI components
+│   ├── readers/             # PDF/MD/TXT renderers
+│   ├── services/            # AI, annotations, history, search, etc.
+│   └── main.js              # Entry point
+├── dist/                    # Web build output
+├── build-native.sh          # Cross-platform build script
+├── package.json
+└── go.mod
+```
+
+---
+
+## 📦 Build & Release
+
+```bash
+# Web only
+npm run build
+
+# Native runner (current platform)
+cd cmd/omnireader && go build -o omnireader .
+
+# All platforms
+./build-native.sh
+
+# Output: dist-native/omnireader-2.0.0-{os}-{arch}[.exe]
+```
+
+---
+
+## 📄 License
+
+MIT — Built with ❤️ by [LEADRACER](https://github.com/LEADRACER)
