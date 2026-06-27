@@ -3,7 +3,9 @@ const QA_HISTORY_KEY = 'omnireader-qa-history';
 const SUMMARY_CACHE_KEY = 'omnireader-summary-cache';
 const TRANSLATION_CACHE_KEY = 'omnireader-translation-cache';
 const AI_MODEL_KEY = 'omnireader-ai-model';
+const AI_PROVIDER_KEY = 'omnireader-ai-provider';
 const THEME_KEY = 'omnireader-theme';
+const PDF_OUTLINE_KEY = 'omnireader-pdf-outline';
 
 class Store {
   constructor() {
@@ -111,6 +113,7 @@ class Store {
     this._clearQaHistory(id);
     this._clearSummaryCache(id);
     this._clearTranslationCache(id);
+    this._clearPdfOutline(id);
     this._save();
     this._emit('documents', this.state.documents);
     this._emit('currentDoc', this.getCurrentDoc());
@@ -239,6 +242,39 @@ class Store {
 
   setAiModel(model) {
     localStorage.setItem(AI_MODEL_KEY, model);
+  }
+
+  // === AI Provider Setting ===
+  getAiProvider() {
+    return localStorage.getItem(AI_PROVIDER_KEY) || 'openrouter';
+  }
+
+  setAiProvider(provider) {
+    localStorage.setItem(AI_PROVIDER_KEY, provider);
+  }
+
+  // === PDF Outline ===
+  getPdfOutline(docId) {
+    try {
+      const cache = JSON.parse(localStorage.getItem(PDF_OUTLINE_KEY) || '{}');
+      return cache[docId] || null;
+    } catch { return null; }
+  }
+
+  setPdfOutline(docId, outline) {
+    try {
+      const cache = JSON.parse(localStorage.getItem(PDF_OUTLINE_KEY) || '{}');
+      cache[docId] = { outline, cachedAt: Date.now() };
+      localStorage.setItem(PDF_OUTLINE_KEY, JSON.stringify(cache));
+    } catch (_) {}
+  }
+
+  _clearPdfOutline(docId) {
+    try {
+      const cache = JSON.parse(localStorage.getItem(PDF_OUTLINE_KEY) || '{}');
+      delete cache[docId];
+      localStorage.setItem(PDF_OUTLINE_KEY, JSON.stringify(cache));
+    } catch (_) {}
   }
 
   // === Theme ===

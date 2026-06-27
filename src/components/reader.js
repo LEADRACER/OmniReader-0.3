@@ -2,7 +2,41 @@ import { store } from '../store.js';
 import { renderMarkdown } from '../readers/markdown.js';
 import { renderText } from '../readers/text.js';
 import { renderPDF } from '../readers/pdf.js';
-import { getSummary, askQuestion, getTranslation, hasApiKey, setApiKey, clearApiKey } from '../services/ai.js';
+import { 
+  getSummary, 
+  askQuestion, 
+  getTranslation, 
+  hasApiKey, 
+  setApiKey, 
+  clearApiKey 
+} from '../services/ai.js';
+import { 
+  initializeAnnotations,
+  createHighlightFromSelection,
+  createNoteFromSelection,
+  getAnnotations,
+  updateAnnotation,
+  deleteAnnotation,
+  HIGHLIGHT_COLORS,
+  clearHighlights,
+  restoreHighlights
+} from '../services/annotations.js';
+import { 
+  initializeHistoryTracking,
+  saveReadingProgress,
+  getReadingProgress,
+  getReadingStats
+} from '../services/history.js';
+import { getPDFOutlineWithPages } from '../services/pdf-outline.js';
+
+// Electron API (available in Electron, undefined in browser)
+const electronAPI = typeof window !== 'undefined' ? window.electronAPI : null;
+
+// Import mobile gestures dynamically
+async function initMobileGestures() {
+  const { initMobileGestures } = await import('../services/mobile-gestures.js');
+  initMobileGestures(store);
+}
 
 export function initReader() {
   const reader = document.getElementById('reader');
@@ -67,6 +101,13 @@ export function initReader() {
     try {
       if (doc.type === 'pdf') {
         await renderPDF(doc.data, container);
+        // Extract and store outline for sidebar
+        if (doc.data) {
+          const outline = await getPDFOutlineWithPages(doc.data);
+          if (outline) {
+            store.setPdfOutline(doc.id, outline);
+          }
+        }
       } else if (doc.type === 'markdown') {
         container.innerHTML = await renderMarkdown(doc.content);
       } else {
@@ -494,6 +535,150 @@ export function initReader() {
       applyAiMode('translated');
     }
   });
+
+  // Initialize annotations (restore highlights on doc change)
+  initializeAnnotations(store);
+
+  // Handle text selection for annotations
+  let annotationMenu = null;
+  
+  document.addEventListener('selectionchange', () => {
+    const selection = window.getSelection();
+    const container = document.getElementById('readerContent');
+    
+    // Remove existing menu
+    if (annotationMenu) {
+      annotationMenu.remove();
+      annotationMenu = null;
+    }
+    
+    if (!selection || selection.rangeCount === 0) return;
+    const selectedText = selection.toString().trim();
+    if (selectedText.length < 2) return; // Ignore tiny selections
+    
+    // Check if selection is inside reader content
+    const range = selection.getRangeAt(0);
+    if (!container || !container.contains(range.commonAncestorContainer)) return;
+    
+    // Create annotation menu
+    annotationMenu = document.createElement('div');
+    annotationMenu.className = 'annotation-menu glass';
+    annotationMenu.style.cssText = `
+      position: absolute;
+      z-index: 1000;
+      padding: 8px;
+      display: flex;
+      gap: 4px;
+      background: rgba(30, 30, 40, 0.95);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    `;
+    
+    const rect = range.getBoundingClientRect();
+    annotationMenu.style.left = `${rect.left + window.scrollX}px`;
+    annotationMenu.style.top = `${rect.bottom + window.scrollY + 8}px`;
+    
+    // Highlight buttons
+    HIGHLIGHT_COLORS.forEach(color => {
+      const btn = document.createElement('button');
+      btn.style.cssText = `
+        width: 28px; height: 28px;
+        border: none; border-radius: 4px;
+        background: ${color.css};
+        cursor: pointer;
+        opacity: 0.9;
+        transition: transform 0.1s, opacity 0.1s;
+      `;
+      btn.title = `Highlight ${color.name}`;
+      btn.addEventListener('mouseenter', () => { btn.style.transform = 'scale(1.1)'; btn.style.opacity = '1'; });
+      btn.addEventListener('mouseleave', () => { btn.style.transform = 'scale(1)'; btn.style.opacity = '0.9'; });
+      btn.addEventListener('click', () => {
+        const doc = store.getCurrentDoc();
+        if (doc) {
+          createHighlightFromSelection(doc.id, color.id);
+        }
+        selection.removeAllRanges();
+        if (annotationMenu) { annotationMenu.remove(); annotationMenu = null; }
+      });
+      annotationMenu.appendChild(btn);
+    });
+    
+    // Note button
+    const noteBtn = document.createElement('button');
+    noteBtn.style.cssText = `
+      width: 28px; height: 28px;
+      border: none; border-radius: 4px;
+      background: var(--accent, #6e45e2);
+      color: white; cursor: pointer;
+      font-size: 14px;
+      opacity: 0.9;
+      transition: transform 0.1s, opacity 0.1s;
+    `;
+    noteBtn.title = 'Add Note';
+    noteBtn.textContent = '📝';
+    noteBtn.addEventListener('mouseenter', () => { noteBtn.style.transform = 'scale(1.1)'; noteBtn.style.opacity = '1'; });
+    noteBtn.addEventListener('mouseleave', () => { noteBtn.style.transform = 'scale(1)'; noteBtn.style.opacity = '0.9'; });
+    noteBtn.addEventListener('click', () => {
+      const noteText = prompt('Add a note for this highlight:');
+      if (noteText) {
+        const doc = store.getCurrentDoc();
+        if (doc) {
+          createNoteFromSelection(doc.id, noteText);
+        }
+      }
+      selection.removeAllRanges();
+      if (annotationMenu) { annotationMenu.remove(); annotationMenu = null; }
+    });
+    annotationMenu.appendChild(noteBtn);
+    
+    document.body.appendChild(annotationMenu);
+    
+    // Position adjustment to keep on screen
+    const menuRect = annotationMenu.getBoundingClientRect();
+    if (menuRect.right > window.innerWidth) {
+      annotationMenu.style.left = `${window.innerWidth - menuRect.width - 8}px`;
+    }
+  });
+
+  // Click outside to dismiss annotation menu
+  document.addEventListener('click', (e) => {
+    if (annotationMenu && !annotationMenu.contains(e.target)) {
+      annotationMenu.remove();
+      annotationMenu = null;
+    }
+  });
+
+  // Initialize history tracking (auto-save scroll, sessions)
+  initializeHistoryTracking(store);
+
+  // Electron-specific: Handle open-file event from main process
+  if (electronAPI && electronAPI.onOpenFile) {
+    const cleanup = electronAPI.onOpenFile(async (filePath) => {
+      try {
+        const result = await electronAPI.readFile(filePath);
+        if (result.success) {
+          const fileName = filePath.split('/').pop().split('\\').pop();
+          const fileExt = fileName.split('.').pop().toLowerCase();
+          
+          const type = fileExt === 'pdf' ? 'pdf' : fileExt === 'md' ? 'markdown' : 'text';
+          const data = type === 'pdf' ? Uint8Array.from(atob(result.data), c => c.charCodeAt(0)) : null;
+          const content = type !== 'pdf' ? atob(result.data) : null;
+          
+          const fileObj = { name: fileName, type: fileExt };
+          store.addDocument(fileObj, content, data);
+        }
+      } catch (err) {
+        console.error('Failed to open file:', err);
+      }
+    });
+    
+    // Cleanup on unload
+    window.addEventListener('beforeunload', cleanup);
+  }
+
+  // Initialize mobile gestures (touch support)
+  initMobileGestures();
 
   render();
 }
